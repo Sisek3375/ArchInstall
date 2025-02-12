@@ -1,8 +1,25 @@
 #!/bin/bash
 
 # Update system
-# pacman -Syu --noconfirm
+pacman -Syu --noconfirm
+
+# Hostname of the installed machine.
+HOSTNAME='ArchESGI'
+
+# Root password (leave blank to be prompted).
+ROOT_PASSWORD='root'
+
+# Main user to create (by default, added to wheel group, and others).
+USER_NAME='user'
+
+# The main user's password (leave blank to be prompted).
+USER_PASSWORD='user'
+
+# Change keyboard to french
 loadkeys fr
+
+# System timezone.
+TIMEZONE='Europe/Paris'
 
 # Partitioning with parted
 parted /dev/sda mklabel gpt
