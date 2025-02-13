@@ -1,95 +1,78 @@
 #!/bin/bash
 
-# Update system
-pacman -Syu --noconfirm
-
-# Hostname of the installed machine.
-HOSTNAME='ArchESGI'
-
-# Root password (leave blank to be prompted).
-ROOT_PASSWORD='root'
-
-# Main user to create (by default, added to wheel group, and others).
-USER_NAME='user'
-
-# The main user's password (leave blank to be prompted).
-USER_PASSWORD='user'
-
-# Change keyboard to french
-loadkeys fr
-
-# System timezone.
-TIMEZONE='Europe/Paris'
-
 # Partitioning with parted
 parted /dev/sda mklabel gpt
-parted /dev/sda mkpart ESP fat32 1MiB 1GiB
+parted /dev/sda mkpart ESP 1MiB 1GiB
 parted /dev/sda set 1 esp on
-parted /dev/sda mkpart LVM 1GiB 100%
+parted /dev/sda mkpart primary 1GiB 16GiB
+parted /dev/sda mkpart primary 16GiB 100%
 
 # Reload partition table
 partprobe /dev/sda
 
 # Format EFI partition
 mkfs.fat -F 32 /dev/sda1
-mount --mkdir /dev/sda1 /mnt/boot/efi
+
+# Format root partition
+mkfs.ext4 /dev/sda2
 
 # Setup LVM
-vgcreate vg_group /dev/sda2
-lvcreate -L 4G -n SWAP vg_group 
-lvcreate -L 15G -n lv_home_colleague vg_group 
-lvcreate -L 5G -n lv_home_son vg_group 
-lvcreate -L 5G -n lv_shared vg_group 
-lvcreate -L 10G -n lv_encrypted vg_group
-lvcreate -L 20G -n lv_VM vg_group
-lvcreate -l 100%FREE -n lv_root vg_group 
+vgcreate vg_group /dev/sda3
+lvcreate vg_group -L 4G -n SWAP
+lvcreate vg_group -L 15G -n lv_home_colleague
+lvcreate vg_group -L 5G -n lv_home_son
+lvcreate vg_group -L 5G -n lv_shared
+lvcreate vg_group -L 10G -n lv_encrypted
+lvcreate vg_group -l 100%FREE -n lv_VM
 
 # Encrypt the logical volume
 echo "azert123" | cryptsetup luksFormat /dev/vg_group/lv_encrypted
+mkswap /dev/vg_group/SWAP
+swapon /dev/vg_group/SWAP
 
 # Format file systems
-mkswap /dev/vg_group/SWAP
 mkfs.ext4 /dev/vg_group/lv_home_colleague
 mkfs.ext4 /dev/vg_group/lv_home_son
 mkfs.ext4 /dev/vg_group/lv_shared
 mkfs.ext4 /dev/vg_group/lv_VM
-mkfs.ext4 /dev/vg_group/lv_root
+mkfs.ext4 /dev/sda2
 
 # Mount file systems
-mount --mkdir /dev/vg_group/lv_root /mnt
-mount --mkdir /dev/vg_group/lv_home_colleague /mnt/home/colleague
-mount --mkdir /dev/vg_group/lv_home_son /mnt/home/son
-mount --mkdir /dev/vg_group/lv_shared /mnt/shared
-mount --mkdir /dev/vg_group/lv_VM /mnt/vm
-
-swapon /dev/vg_group/SWAP
-
-pacstrap -K /mnt base linux linux-firmware
+mount /dev/sda2 /mnt
+mkdir -p /mnt/boot/efi
+mount /dev/sda1 /mnt/boot/efi
+mkdir -p /mnt/home/colleague
+mount /dev/vg_group/lv_home_colleague /mnt/home/colleague
+mkdir /mnt/home/son
+mount /dev/vg_group/lv_home_son /mnt/home/son
+mkdir /mnt/shared
+mount /dev/vg_group/lv_shared /mnt/shared
+mkdir /mnt/VM
+mount /dev/vg_group/lv_VM /mnt/VM
 
 # Generate fstab
-genfstab -U /mnt >> /mnt/etc/fstab
+mkdir /mnt/etc
+genfstab -L /mnt >> /mnt/etc/fstab
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano
 
 # Chroot into system and configure
 arch-chroot /mnt /bin/bash <<EOF
-ln -sf /usr/share/zoneinfo/GMT /etc/localtime
+ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 hwclock --systohc
-
-sed -i 's/#fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen
+sed -i "s/#fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/" /etc/locale.gen
 locale-gen
 echo "LANG=fr_FR.UTF-8" > /etc/locale.conf
 echo "KEYMAP=fr" > /etc/vconsole.conf
 echo "CustomArch" > /etc/hostname
 echo "root:azerty123" | chpasswd
-
+sed -i 's/\(HOOKS=(.*\)filesystems/\1lvm2 filesystems/' /etc/mkinitcpio.conf
 mkinitcpio -P
-
-# Install and configure GRUB
-pacman -S grub efibootmgr --noconfirm
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --removable
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CustomArchBootLoader
 grub-mkconfig -o /boot/grub/grub.cfg
+exit
+
 EOF
 
-# Exit chroot, unmount, and reboot
-exit
-umount -a
+umount -R /mnt
+
 reboot
