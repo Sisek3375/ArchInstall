@@ -53,7 +53,7 @@ mount /dev/vg_group/lv_VM /mnt/VM
 # Generate fstab
 mkdir /mnt/etc
 genfstab -L /mnt >> /mnt/etc/fstab
-pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 networkmanager nano
 
 # Chroot into system and configure
 arch-chroot /mnt /bin/bash <<EOF
