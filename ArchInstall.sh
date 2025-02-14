@@ -71,7 +71,7 @@ sed -i 's/\(HOOKS=(.*\)filesystems/\1lvm2 filesystems/' /etc/mkinitcpio.conf
 mkinitcpio -P
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CustomArchBootLoader
 grub-mkconfig -o /boot/grub/grub.cfg
-exit
+# exit
 
 EOF
 
@@ -85,4 +85,4 @@ systemctl restart systemd-networkd systemd-resolved
 
 umount -R /mnt
 
-reboot
+# reboot
