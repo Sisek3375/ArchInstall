@@ -50,6 +50,8 @@ mount /dev/vg_group/lv_shared /mnt/shared
 mkdir /mnt/VM
 mount /dev/vg_group/lv_VM /mnt/VM
 
+
+
 # Generate fstab
 mkdir /mnt/etc
 genfstab -L /mnt >> /mnt/etc/fstab
@@ -69,7 +71,9 @@ sed -i 's/\(HOOKS=(.*\)filesystems/\1lvm2 filesystems/' /etc/mkinitcpio.conf
 mkinitcpio -P
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CustomArchBootLoader
 grub-mkconfig -o /boot/grub/grub.cfg
-# exit
+exit
+
+EOF
 
 # Enable network card
 systemctl enable systemd-networkd systemd-resolved
@@ -79,8 +83,6 @@ echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-w
 
 systemctl restart systemd-networkd systemd-resolved
 
-EOF
-
 umount -R /mnt
 
-# reboot
+reboot
