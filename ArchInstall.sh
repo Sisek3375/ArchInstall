@@ -53,7 +53,7 @@ mount /dev/vg_group/lv_VM /mnt/VM
 # Generate fstab
 mkdir /mnt/etc
 genfstab -L /mnt >> /mnt/etc/fstab
-pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 networkmanager nano
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano
 
 # Chroot into system and configure
 arch-chroot /mnt /bin/bash <<EOF
@@ -70,6 +70,14 @@ mkinitcpio -P
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CustomArchBootLoader
 grub-mkconfig -o /boot/grub/grub.cfg
 exit
+
+# Enable network card
+systemctl enable systemd-networkd systemd-resolved
+systemctl start systemd-networkd systemd-resolved
+
+echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-wired.network
+
+systemctl restart systemd-networkd systemd-resolved
 
 EOF
 
