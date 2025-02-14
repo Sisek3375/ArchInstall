@@ -72,12 +72,12 @@ grub-mkconfig -o /boot/grub/grub.cfg
 exit
 
 # Enable network card
-systemctl enable systemd-networkd systemd-resolved
-systemctl start systemd-networkd systemd-resolved
+sudo systemctl enable systemd-networkd systemd-resolved
+sudo systemctl start systemd-networkd systemd-resolved
 
-echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-wired.network
+sudo echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-wired.network
 
-systemctl restart systemd-networkd systemd-resolved
+sudo systemctl restart systemd-networkd systemd-resolved
 
 EOF
 
