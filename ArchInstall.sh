@@ -55,7 +55,7 @@ mount /dev/vg_group/lv_VM /mnt/VM
 # Generate fstab
 mkdir /mnt/etc
 genfstab -L /mnt >> /mnt/etc/fstab
-pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager xorg-server xorg-xinit xorg-twm xterm i3 firefox virtualbox
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager xorg-server xorg-xinit xorg-twm xterm i3 firefox virtualbox git
 
 
 
