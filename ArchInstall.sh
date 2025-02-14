@@ -55,7 +55,7 @@ mount /dev/vg_group/lv_VM /mnt/VM
 # Generate fstab
 mkdir /mnt/etc
 genfstab -L /mnt >> /mnt/etc/fstab
-pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager xorg-server xorg-xinit xorg-twm xterm i3
 
 
 
@@ -75,6 +75,7 @@ grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Custo
 grub-mkconfig -o /boot/grub/grub.cfg
 systemctl enable NetworkManager
 systemctl start NetworkManager
+startx
 exit
 
 EOF
