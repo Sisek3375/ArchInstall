@@ -50,7 +50,13 @@ mount /dev/vg_group/lv_shared /mnt/shared
 mkdir /mnt/VM
 mount /dev/vg_group/lv_VM /mnt/VM
 
+# Enable network card
+systemctl enable systemd-networkd systemd-resolved
+systemctl start systemd-networkd systemd-resolved
 
+echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-wired.network
+
+systemctl restart systemd-networkd systemd-resolved
 
 # Generate fstab
 mkdir /mnt/etc
@@ -74,14 +80,6 @@ grub-mkconfig -o /boot/grub/grub.cfg
 # exit
 
 EOF
-
-# Enable network card
-systemctl enable systemd-networkd systemd-resolved
-systemctl start systemd-networkd systemd-resolved
-
-echo -e "[Match]\nName=ens33\n\n[Network]\nDHCP=yes" > /etc/systemd/network/20-wired.network
-
-systemctl restart systemd-networkd systemd-resolved
 
 umount -R /mnt
 
