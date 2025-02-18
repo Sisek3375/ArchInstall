@@ -26,7 +26,9 @@ lvcreate vg_group -L 10G -n lv_encrypted
 lvcreate vg_group -l 100%FREE -n lv_VM
 
 # Encrypt the logical volume
-echo "azert123" | cryptsetup luksFormat /dev/vg_group/lv_encrypted
+echo "azerty123" | cryptsetup luksFormat /dev/vg_group/lv_encrypted
+
+# Swap creation
 mkswap /dev/vg_group/SWAP
 swapon /dev/vg_group/SWAP
 
@@ -50,17 +52,14 @@ mount /dev/vg_group/lv_shared /mnt/shared
 mkdir /mnt/VM
 mount /dev/vg_group/lv_VM /mnt/VM
 
-
-
 # Generate fstab
 mkdir /mnt/etc
-genfstab -L /mnt >> /mnt/etc/fstab
-pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager xorg-server xorg-xinit xorg-twm xterm i3 firefox virtualbox git
-
-
+genfstab -L /mnt > /mnt/etc/fstab
+pacstrap /mnt base linux linux-firmware grub efibootmgr lvm2 nano vim networkmanager xorg-server xorg-xinit xorg-twm xterm sddm i3 firefox virtualbox git
 
 # Chroot into system and configure
 arch-chroot /mnt /bin/bash <<EOF
+
 ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 hwclock --systohc
 sed -i "s/#fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/" /etc/locale.gen
@@ -69,17 +68,25 @@ echo "LANG=fr_FR.UTF-8" > /etc/locale.conf
 echo "KEYMAP=fr" > /etc/vconsole.conf
 echo "CustomArch" > /etc/hostname
 echo "root:azerty123" | chpasswd
+useradd -m -s /bin/bash colleague && echo "colleague:azerty123" | chpasswd
+useradd -m -s /bin/bash son && echo "son:azerty123" | chpasswd
+
 sed -i 's/\(HOOKS=(.*\)filesystems/\1lvm2 filesystems/' /etc/mkinitcpio.conf
 mkinitcpio -P
+
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=CustomArchBootLoader
 grub-mkconfig -o /boot/grub/grub.cfg
+
+systemctl enable sddm.service
 systemctl enable NetworkManager
 systemctl start NetworkManager
-startx
-exit
 
+pacman -Sy sudo --noconfirm
+git clone -b v3 --depth 1 https://github.com/keyitdev/dotfiles.git
+cd dotfiles
+chmod 7 install-on-arch.sh
+./install-on-arch.sh
 EOF
 
 umount -R /mnt
-
 reboot
